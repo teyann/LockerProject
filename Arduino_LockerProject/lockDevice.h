@@ -2,6 +2,7 @@
 #define _LOCKDEVICE_H_
 
 #include <Arduino.h>
+#include "key.h"
 
 class lockDevice
 {

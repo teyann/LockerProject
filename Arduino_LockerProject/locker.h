@@ -18,8 +18,8 @@ enum state_t{
 };
 // FIND, KEEP
 enum mode_t{
-	FIND_MODE,
-	KEEP_MODE
+	KEEP_MODE,
+	FIND_MODE
 };
 
 class locker
@@ -27,6 +27,7 @@ class locker
 public:
 	// ������
 	locker(int maxNum);
+	void begin();
 	int updateLocker(key* myKey, lockDevice* myLock);
 	// ���� ����
 	state_t currentState();
@@ -60,6 +61,8 @@ private:
 	// �ʹݿ� �ԷµǴ� ���� ���� �ٲ�
 	lockerInfo_t *_info = new lockerInfo_t[_lockerMaxNum];
 	mode_t _mode;
+
+	int _lockerNum;
 
 	// �ð�����
 	uint32_t closeStartTime;

@@ -7,6 +7,7 @@ key::key() {
 }
 
 void key::updateKey() {
+#ifndef _SEIRLA_IO_
 	// key matrix�� ����� ���� ������ �о��
 	uint16_t keyADC = analogRead(KEY_PIN);
 
@@ -22,17 +23,29 @@ void key::updateKey() {
 			}
 		}
 	}
+#endif
+#ifdef _SEIRLA_IO_
+	if (Serial.available() > 0) {
+		_keyChar = Serial.read();
+	}
+else {
+  _keyChar = NO_CHAR;
+}
+#endif
+
 	if (isNumber() == true) {
 		// ���ۿ� ����
 		for (int i = 1; i < 4; i++) {
 			_num4Buf[i - 1] = _num4Buf[i];
 		}
-		_num4Buf[4] = _keyChar;
-		if (++_num4Index == 4) {
+		_num4Buf[3] = _keyChar;
+		++_num4Index;
+		if (_num4Index == 4) {
 			bufFull = true;
 		}
 		_num4Index = _num4Index % 4;
 	}
+
 #ifdef _SERIAL_DEBUG_
 	Serial.println(keyADC + "/" + _keyChar);
 #endif
@@ -50,6 +63,7 @@ int key::read4Num() {
 
 void key::clearBuffer() {
 	memset(_num4Buf, 0, 4);
+	_num4Index = 0;
 	bufFull = false;
 }
 

@@ -28,6 +28,7 @@ void lockDevice::limSwInit() {
 }
 
 boolean lockDevice::isLimSwOn(int boxNum) {
+#ifndef _SEIRLA_IO_
 	static uint32_t startTime = 0;
 	static bool flag = false;
 	if (digitalRead(_limSwPtr[boxNum - 1]) == 0) {
@@ -43,6 +44,8 @@ boolean lockDevice::isLimSwOn(int boxNum) {
 		flag = false;
 	}
 	return false;
+#endif
+	return true;
 }
 
 int lockDevice::limSwOnTime(int boxNum) {

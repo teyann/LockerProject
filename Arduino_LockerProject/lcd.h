@@ -2,7 +2,6 @@
 #define _LCD_H_
 
 #include <Arduino.h>
-#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "locker.h"
 #include "key.h"
@@ -11,6 +10,7 @@
 class lcd
 {
 public:
+	lcd(); //for Serial IO
 	lcd(LiquidCrystal_I2C* liquidCrystalPtr);
 	void writeLcd(locker* locker, key* key);
 	void writeErrLcd(int errCnt);
@@ -19,8 +19,7 @@ private:
 		INITAL_LCD = 0, SELECT_LCD = 2, PASSWORD_LCD = 3,
 		OPEN_LCD = 4, CLOSE_LCD = 6, ERROR_LCD = 8
 	};
-	LiquidCrystal_I2C* _lcdI2c;
-
+	LiquidCrystal_I2C* _lcd;
 	String lcdMsg[9] = {
 		"Locker System!",
 		"1. Keep 2. Find",
@@ -38,10 +37,10 @@ private:
 		"Error",
 	};
 
-	String lcdKeyword[4] = {
+	String lcdKeyword[5] = {
 		"Keep ",
 		"Find ",
-		"Out Range" // Err 1
+		"Out Range", // Err 1
 		"Don't Use", // Err 2
 		"Password" // Err 3
 	};

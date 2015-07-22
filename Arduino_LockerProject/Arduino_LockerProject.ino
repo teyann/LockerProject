@@ -1,4 +1,3 @@
-﻿#include <EEPROM.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "locker.h"
@@ -16,18 +15,30 @@ int LIMIT_SWITCH_PIN[4] = {
 LiquidCrystal_I2C	i2cLcd(0x27, 16, 2);  // set the LCD address to 0x27 for a 20 chars and 4 line display
 locker				Locker(4);
 key					Key;
+#ifndef _SEIRLA_IO_
 lcd					LCD(&i2cLcd);
+#endif
+#ifdef _SEIRLA_IO_
+lcd					LCD;
+#endif
 lockDevice			Lock(LOCK_PIN, LIMIT_SWITCH_PIN);
 
 void setup() {
 	Serial.begin(9600);
+	LCD.writeLcd(&Locker, &Key);
+	Locker.begin();
 }
 
 void loop() {
 	// Ű��Ʈ ������ �б�
 	Key.updateKey();
 	// ��� ������Ʈ
-	Locker.updateLocker(&Key, &Lock);
-	// LCD ���
-	LCD.writeLcd(&Locker, &Key);
+	int errCode = Locker.updateLocker(&Key, &Lock);
+	if (errCode != 0) {
+		LCD.writeErrLcd(errCode);
+	}
+	else {
+		// LCD ���
+		LCD.writeLcd(&Locker, &Key);
+	}
 }
