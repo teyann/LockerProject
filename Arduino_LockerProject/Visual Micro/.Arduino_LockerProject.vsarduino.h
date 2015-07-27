@@ -84,6 +84,7 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portInputRegister(P)
 #define portModeRegister(P)
 #include <Arduino_LockerProject.ino>
+#include <config.h>
 #include <key.cpp>
 #include <key.h>
 #include <lcd.cpp>

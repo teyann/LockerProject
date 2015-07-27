@@ -1,236 +1,251 @@
 #include "locker.h"
 
-locker::locker(int maxNum)
+LockerClass::LockerClass(int maxNum) 
 : _lockerMaxNum(maxNum) {
-	_info = new lockerInfo_t[_lockerMaxNum];
-	_lockerNum = -1;
+	_lockerInfo = new lockerInfo_t[_lockerMaxNum];
 }
 
-locker::~locker() {
-	delete[] _info;
-	_info = NULL;
+LockerClass::~LockerClass() {
+	delete[] _lockerInfo;
+	_lockerInfo = NULL;
 }
 
-void locker::begin(key* myKey, lockDevice* myLock) {
+void LockerClass::begin(KeypadClass* const myKeypad, LockDeviceClass* const myLock) {
 	for (int i = 0; i < _lockerMaxNum; i++) {
-		_info[i].hasItem = false;
-//		_info[i].password = 0; // INFO0
+		_lockerInfo[i].hasItem = false;
+		_lockerInfo[i].password = 0;
 	}
-	_myKey = myKey;
+	_myKeypad = myKeypad;
 	_myLock = myLock;
 }
 
-// ���� ����
-state_t locker::currentState() {
-	return _state;
+state_t LockerClass::getCurrentState() {
+	return _currentState;
 }
 
-// state_t
-void locker::updateState(state_t newState) {
-	_state = newState;
-	if (newState == CLOSE_STATE)
-		closeStartTime = millis();
+void LockerClass::setCurrentState(state_t newState) {
+	_currentState = newState;
+	if (newState == IDLE_STATE)
+		// 아이들상태으로 바뀌기 전에 ADMIN_PASSWORD에 
+		// 있는 숫자가 입력되었으면 오류가 발생하므로 버퍼를 비움
+		_myKeypad->clearBuffer(); 
+	else if (newState == CLOSE_STATE)
+		setCloseStartTime();
 	else if (newState == ADMIN_STATE)
-		adminStartTime = millis();
+		setAdminStartTime();
 
 }
 
-mode_t locker::selectedMode(){
+mode_t LockerClass::getSelectMode(){
 	return _mode;
 }
-// [mode_t]
-void locker::selectMode(mode_t newMode) {
+void LockerClass::setSelectMode(mode_t newMode) {
 	_mode = newMode;
 }
 
-// [1;4]
-boolean locker::hasItem(int lockerNum) {
-	lockerNum--;
-	if (!(lockerNum >= 0 && lockerNum <= _lockerMaxNum))
-		return false;
-	return _info[lockerNum].hasItem;
+/* 
+ * @param lockerNum [1;4]
+ */
+boolean LockerClass::getHasItem(int lockerNum) {
+	return _lockerInfo[lockerNum-1].hasItem;
 }
-// [1;4]
-int locker::password(int lockerNum) {
-	lockerNum--;
-	if (!(lockerNum >= 0 && lockerNum < _lockerMaxNum))
-		return false;
-	return _info[lockerNum].password;
+/*
+ * @param lockerNum [1;4]
+ */
+void LockerClass::setHasItem(int lockerNum, boolean state) {
+	_lockerInfo[lockerNum-1].hasItem = state;
 }
-// [1;4],[0;9999]
-int locker::findItem(int lockerNum, int pw) {
-	lockerNum--;
-	if (!(lockerNum >= 0 && lockerNum < _lockerMaxNum))
-		return 1;
-	if (_info[lockerNum].hasItem != true)
-		return 2;
 
-	Serial.print("FIND | N "); Serial.print(lockerNum + 1);
-	Serial.print(" | PW "); Serial.print(password(lockerNum));
+/*
+ * @param lockerNum [1;4]
+ */
+int LockerClass::getPassword(int lockerNum) {
+	return _lockerInfo[lockerNum-1].password;
+}
+/*
+ * @param lockerNum [1;4]
+ */
+void LockerClass::setPassword(int lockerNum, int password) {
+	_lockerInfo[lockerNum - 1].password = password;
+}
+
+/*
+ * @param lockerNum [1;4] pw[0;9999]
+ * @retval 1: 범위초과, 2: 보관되어있지않음, 3: 비밀번호틀림
+ */
+int LockerClass::findItem(int lockerNum, int pw) {
+	if (!(lockerNum > 0 && lockerNum <= _lockerMaxNum))
+		return 1;
+	if (getHasItem(lockerNum) != true)
+		return 2;
+#ifdef SERIAL_DEBUG
+	Serial.print("FIND | N "); Serial.print(lockerNum);
+	Serial.print(" | PW "); Serial.print(getPassword(lockerNum));
 	Serial.print(" | InPW "); Serial.println(pw);
-
-	if (password(lockerNum) != pw)
+#endif
+	if (getPassword(lockerNum) != pw)
 		return 3;
-	_info[lockerNum].hasItem = false;
-	_info[lockerNum].password = 0; // INFO0
+	setHasItem(lockerNum, false);
+	setPassword(lockerNum, 0);
 	return 0;
 }
-// [1;4], [0;9999]
-int locker::keepItem(int lockerNum, int pw) {
-	lockerNum--;
-	if (!(lockerNum >= 0 && lockerNum < _lockerMaxNum))
+
+/*
+ * @param lockerNum [1;4] pw[0;9999]
+ * @retval 1: 범위초과, 2: 보관되어있음
+ */
+int LockerClass::keepItem(int lockerNum, int pw) {
+	if (!(lockerNum > 0 && lockerNum <= _lockerMaxNum))
 		return 1;
-	if (_info[lockerNum].hasItem != false)
+	if (getHasItem(lockerNum) != false)
 		return 2;
-
-	Serial.print("KEEP | N "); Serial.print(lockerNum + 1);
+#ifdef SERIAL_DEBUG
+	Serial.print("KEEP | N "); Serial.print(lockerNum);
 	Serial.print(" | PW "); Serial.println(pw);
-
-	_info[lockerNum].hasItem = true;
-	_info[lockerNum].password = pw;
+#endif
+	setHasItem(lockerNum, true);
+	setPassword(lockerNum, pw);
 	return 0;
 }
 
-// ['1','2']
-mode_t locker::a2Mode(char c) {
-	if (c == '1')
-		return KEEP_MODE;
-	else
-		return FIND_MODE;
-}
+int LockerClass::updateLocker() {
+	static int lockerNum = -1;
 
-int locker::updateLocker() {
-	char key = _myKey->readKey();
+	// 입력된 키패드 데이터
+	char key = _myKeypad->getData();
 
-	if (key != NO_CHAR) {
-		Serial.print("In Char = ");
-		Serial.println(key);
-		Serial.println();
+	// 에러 상태일때
+	int errCode = getErrorCode();
+	if (errCode != 0) {
+		if (getDeltaErrorTime() <= 2000)
+			return errCode;
+		else
+			setErrorCode(0);
 	}
 
-	// OPEN���°� �ƴҶ� '*'�� �ԷµǸ� �ʱ���·� ���ư�
-	if (_myKey->isAsterisk() != false) { 
-		if (currentState() != OPEN_STATE)
-			updateState(IDLE_STATE);
+	// OPEN모드가 아닐때, *가 입력된경우
+	if (_myKeypad->isAsterisk() != false) { 
+		if (getCurrentState() != OPEN_STATE)
+			setCurrentState(IDLE_STATE);
 	}
 
-	switch (currentState()) {
+	switch (getCurrentState()) {
 	case IDLE_STATE:
-      		// ���۰� �������� ������ ��ȣ�� ��ġ�ϴ��� Ȯ��
-		if (_myKey->isBufferFull() != false) {
-			if (_myKey->read4Num() == _ADMIN_PASSWORD_)
-				updateState(ADMIN_STATE);
-			_myKey->clearBuffer();
+		if (_myKeypad->isBufferFull() != false) {
+			if (_myKeypad->get4DigitNum() == _ADMIN_PASSWORD_) {
+				setCurrentState(ADMIN_STATE);
+			}
+			_myKeypad->clearBuffer();
 		}
-		// �Էµ� ���� '1','2'�϶� ��带 ����
 		if (key == '1' || key == '2') {
-			selectMode(a2Mode(key));
-			updateState(SELECT_STATE);
+			mode_t inMode;
+			if (key == '1')
+				inMode =  KEEP_MODE;
+			else
+				inMode =  FIND_MODE;
+			setSelectMode(inMode);
+			setCurrentState(SELECT_STATE);
 		}
 		break;
 	case SELECT_STATE:
-		if (_myKey->isNumber() != false) { // �����϶���
-			_lockerNum = (key - 48)%10; // [0;9] 나머진 에러로 처리해도 됨
-			if (!(_lockerNum > 0 && _lockerNum <= _lockerMaxNum)) { // [1;4]
+		if (_myKeypad->isNumber() != false) {
+			lockerNum = _myKeypad->getNum(); // [0;9]
+			if (!(lockerNum > 0 && lockerNum <= _lockerMaxNum)) { // [1;4]
+				setErrorCode(1);
 				return 1;
 			}
-			// ã�� ����϶� �����Ǿ� ������ ���ÿϷ�
-			if (selectedMode() == FIND_MODE) {
-				if (hasItem(_lockerNum) != true) {
-					// ERR_02
+			if (getSelectMode() == FIND_MODE) {
+				if (getHasItem(lockerNum) != true) {
+					setErrorCode(2);
 					return 2;
 				}
 				else {
-                    _myKey->clearBuffer();
-					updateState(PASSWORD_STATE);
+                    _myKeypad->clearBuffer();
+					setCurrentState(PASSWORD_STATE);
 				}
 			}
-			// ���� ����ϋ� ��������� ���ÿϷ�
-			else if (selectedMode() == KEEP_MODE) {
-				if (hasItem(_lockerNum) != false) {
-					// ERR_02
+			else if (getSelectMode() == KEEP_MODE) {
+				if (getHasItem(lockerNum) != false) {
+					setErrorCode(2);
 					return 2;
 				}
 				else {
-                    _myKey->clearBuffer();
-					updateState(PASSWORD_STATE);
+                    _myKeypad->clearBuffer();
+					setCurrentState(PASSWORD_STATE);
 				}
 			}
         }
         break;
 
 	case PASSWORD_STATE:
-			// �������� ���õǾ�����, ���۰� �������� �о ��й�ȣ ��
-			if (_myKey->isBufferFull() != false) {
-				int pw = _myKey->read4Num(); // ��й�ȣ �б�
-				if (selectedMode() == KEEP_MODE) {
-					int temp = keepItem(_lockerNum, pw);
-					findItem(_lockerNum, pw);
+			if (_myKeypad->isBufferFull() != false) {
+				int pw = _myKeypad->get4DigitNum();
+				if (getSelectMode() == KEEP_MODE) {
+					int temp = keepItem(lockerNum, pw);
 					switch (temp) {
 					case 0:
-						updateState(OPEN_STATE);
+						setCurrentState(OPEN_STATE);
 						break;
-//					case 1:
-//						// ERR_01 ������ ��ȣ�� �������� ���� �ʴ°��
-//						return 1;
-//						break;
-//					case 2:
-//						// ERR_02 ������ ��ǰ�� �ִ°��  -> �ٽ� ����
-//						return 2;
-//						break;
+					case 1:
+						setErrorCode(1);
+						setCurrentState(IDLE_STATE);
+						return 1;
+						break;
+					// 일반적인 상황에선 case 2가 발생하지 않음
+					case 2:
+						setErrorCode(2);
+						return 2;
+						break;
 					}
 				}
-				else if (selectedMode() == FIND_MODE) {
-					int temp = findItem(_lockerNum, pw);
+				else if (getSelectMode() == FIND_MODE) {
+					int temp = findItem(lockerNum, pw);
 					switch (temp) {
 					case 0:
-						updateState(OPEN_STATE);
+						setCurrentState(OPEN_STATE);
 						break;
-//					case 1:
-//						// ERR_01 ������ ��ȣ�� �������� ���� �ʴ°��
-//						return 1;
-//						break;
-//					case 2:
-//						// ERR_02 ������ ��ǰ�� ���°��  -> �ٽ� ����
-//						return 2;
-//						break;
+					case 1:
+						setErrorCode(1);
+						setCurrentState(IDLE_STATE);
+						return 1;
+						break;
+					// 일반적인 상황에선 case 2가 발생하지 않음
+					case 2:
+						setErrorCode(2);
+						return 2;
+						break;
 					case 3:
-						// ERR_03 ��й�ȣ�� ��ġ���� �ʴ°�� -> ��й�ȣ �ٽ� �Է�
+						setErrorCode(3);
 						return 3;
 						break;
 					}
 				}
-				_myKey->clearBuffer();
+				_myKeypad->clearBuffer();
 			}
 		  break;
 	case OPEN_STATE:
-		// ������ ���� ���
-		_myLock->lockOff(_lockerNum);
-		// �������·� ��ư�� ������
-		if (_myLock->isLimSwOn(_lockerNum) != false) {
+		_myLock->lockOff(lockerNum);
+		if (_myLock->isLimSwOn(lockerNum) != false) {
 			if (key == '#') {
-				updateState(CLOSE_STATE);
+				setCurrentState(CLOSE_STATE);
 			}
-//			else if () �ð� // ���ͷ�Ʈ�� �̿��ϴ°� Ȯ���Ұ����� ����
+//			else if ()  // TODO: 리미트스위치가 일정시간 이상 눌려있는경우(일정시간이상 닫혀있는경우) 구현
 		}
 		break;
 	case CLOSE_STATE:
-		// ������ ���� ���
-		_myLock->lockOn(_lockerNum);
-//		// ���� �ð��� ���ư�
-		if ((millis() - closeStartTime) >= 3000) {
-			_lockerNum = -1;
-			updateState(IDLE_STATE);
+		_myLock->lockOn(lockerNum);
+		if (getDeltaCloseTime() >= 3000) {
+			lockerNum = -1;
+			setCurrentState(IDLE_STATE);
 		}
 		break;
 	case ADMIN_STATE:
-		// ������ ���
-		// 5�ʰ� ��й�ȣ ��� ���
-		// 앞에 0 채울 방법 찾아보기
-		if ((millis() - adminStartTime) >= 3000) {
-			updateState(IDLE_STATE);
+		// TODO: 앞에 0 채울 방법 찾아보기
+		if (getDeltaAdminTime() >= 3000) {
+			setCurrentState(IDLE_STATE);
 		}
 		break;
 	}
+	setErrorCode(0);
 	return 0;
 }

@@ -1,37 +1,46 @@
 #include "lockDevice.h"
 
-lockDevice::lockDevice(int* lockPtr, int* limSwPtr) 
+LockDeviceClass::LockDeviceClass(const int* lockPtr, const int* limSwPtr)
 : _lockPtr(lockPtr), _limSwPtr(limSwPtr) {
 	lockInit();
 	limSwInit();
 }
 
-void lockDevice::lockInit() {
-	for (uint8_t i = 0; i < 4; i++) {
+void LockDeviceClass::lockInit() {
+	for (uint8_t i = 0; i < LOCKER_SIZE; i++) {
 		pinMode(_lockPtr[i], OUTPUT);
 		lockOn(_lockPtr[i]);
 	}
 }
 
-void lockDevice::lockOff(int boxNum) {
-	digitalWrite(_lockPtr[boxNum-1], HIGH);
+/*
+ * @param lockerNum [1;4]
+ */
+void LockDeviceClass::lockOff(int lockerNum) {
+	digitalWrite(_lockPtr[lockerNum-1], HIGH);
 }
 
-void lockDevice::lockOn(int boxNum) {
-	digitalWrite(_lockPtr[boxNum - 1], LOW);
+/*
+* @param lockerNum [1;4]
+*/
+void LockDeviceClass::lockOn(int lockerNum) {
+	digitalWrite(_lockPtr[lockerNum - 1], LOW);
 }
 
-void lockDevice::limSwInit() {
-	for (uint8_t i = 0; i < 4; i++) {
+void LockDeviceClass::limSwInit() {
+	for (uint8_t i = 0; i < LOCKER_SIZE; i++) {
 		pinMode(_limSwPtr[i], INPUT_PULLUP); //���� Ǯ�� ���
 	}
 }
 
-boolean lockDevice::isLimSwOn(int boxNum) {
-#ifndef _SEIRLA_IO_
+/*
+* @param lockerNum [1;4]
+*/
+boolean LockDeviceClass::isLimSwOn(int lockerNum) {
+#if(!defined SEIRLA_IO)
 	static uint32_t startTime = 0;
 	static bool flag = false;
-	if (digitalRead(_limSwPtr[boxNum - 1]) == 0) {
+	if (digitalRead(_limSwPtr[lockerNum - 1]) == 0) {
 		if (flag == false) {
 			startTime = millis();
 			flag = true;
@@ -44,11 +53,12 @@ boolean lockDevice::isLimSwOn(int boxNum) {
 		flag = false;
 	}
 	return false;
-#endif
+#else
 	return true;
+#endif
 }
 
-int lockDevice::limSwOnTime(int boxNum) {
+int LockDeviceClass::getLimSwOnTime(int lockerNum) {
 	// INT
 	return 0;
 }

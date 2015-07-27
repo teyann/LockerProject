@@ -74,6 +74,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="config.h" />
     <ClInclude Include="key.h">
       <FileType>CppCode</FileType>
     </ClInclude>

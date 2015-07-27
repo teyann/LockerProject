@@ -1,13 +1,18 @@
 #include "key.h"
 
-key::key() {
-	_keyChar = '\0';
-	_num4Index = 0;
+char KeypadClass::analogKeyData[3][4] = { '1', '2', '3',
+										'4', '5', '6',
+										'7', '8', '9',
+										'*', '0', '#', };
+
+KeypadClass::KeypadClass() {
+	_data = '\0';
+	_bufIndex = 0;
 	bufFull = false;
 }
 
-void key::updateKey() {
-#ifndef _SEIRLA_IO_
+void KeypadClass::updateKeypad() {
+#if(!defined SEIRLA_IO)
 	// key matrix�� ����� ���� ������ �о��
 	uint16_t keyADC = analogRead(KEY_PIN);
 
@@ -18,76 +23,95 @@ void key::updateKey() {
 		for (uint8_t j = 0; j < 4; j++) {
 			if (keyADC >= (analogKeyValue[i][j] - VAL_RANGE) &&
 				keyADC <= (analogKeyValue[i][j] + VAL_RANGE)) {
-				_keyChar = analogKeyData[i][j];
+				_data = analogKeyData[i][j];
 				break;
 			}
 		}
 	}
-#endif
-#ifdef _SEIRLA_IO_
+#else
 	if (Serial.available() > 0) {
-		_keyChar = Serial.read();
+		_data = Serial.read();
 	}
-else {
-  _keyChar = NO_CHAR;
-}
+	else {
+		_data = NO_CHAR;
+	}
 #endif
-
+	// 선형 큐(FIFO)
 	if (isNumber() == true) {
-		// ���ۿ� ����
 		for (int i = 1; i < 4; i++) {
-			_num4Buf[i - 1] = _num4Buf[i];
+			_buf[i - 1] = _buf[i];
 		}
-		_num4Buf[3] = _keyChar;
-		++_num4Index;
-		if (_num4Index == 4) {
+		_buf[3] = _data;
+		++_bufIndex;
+		if (_bufIndex == 4) {
 			bufFull = true;
 		}
-		_num4Index = _num4Index % 4;
+		_bufIndex = _bufIndex % 4;
 	}
 
-#ifdef _SERIAL_DEBUG_
-	Serial.println(keyADC + "/" + _keyChar);
+#if(!defined SEIRLA_IO && defined SERIAL_DEBUG)
+	Serial.println(keyADC + "/" + _data);
+#endif
+#ifdef SERIAL_DEBUG
+	if (_data != NO_CHAR) {
+		Serial.print("In Char = ");
+		Serial.println(_data);
+		Serial.println();
+	}
 #endif
 }
 
-char key::readKey() {
-	return _keyChar;
+/*
+ * @retval ascii character
+ */
+char KeypadClass::getData() {
+	return _data;
 }
 
-int key::read4Num() {
-	int val = atoi(_num4Buf);
+/*
+ * @retval [0;9]
+ */
+int KeypadClass::getNum() {
+// WARNING | 입력된 값이 숫자가 아니면 값에 오류 발생
+	return (_data - 48) % 10;
+}
+
+/*
+ * @retval [0;9999]
+ */
+int KeypadClass::get4DigitNum() {
+	int val = atoi(_buf);
 	clearBuffer();
 	return val;
 }
 
-void key::clearBuffer() {
-	memset(_num4Buf, 0, 4);
-	_num4Index = 0;
+void KeypadClass::clearBuffer() {
+	memset(_buf, 0, 4);
+	_bufIndex = 0;
 	bufFull = false;
 }
 
-boolean key::isBufferFull() {
+boolean KeypadClass::isBufferFull() {
 	return bufFull;
 }
 
-int key::bufferCount() {
-	return _num4Index;
+int KeypadClass::getBufferCount() {
+	return _bufIndex;
 }
 
-boolean key::isData() {
-	return _keyChar != NO_CHAR;
+boolean KeypadClass::isData() {
+	return _data != NO_CHAR;
 }
 
-boolean key::isNumber() {
-	return (_keyChar >= '0' && _keyChar <= '9');
+boolean KeypadClass::isNumber() {
+	return (_data >= '0' && _data <= '9');
 }
 
-boolean key::isChar() {
-	char c = _keyChar;
+boolean KeypadClass::isChar() {
+	char c = _data;
 	return ((c >= 'A' && c <= 'D') || (c == '*') || (c == '#'));
 }
 
-boolean key::isAsterisk() {
-	return (_keyChar == '*');
+boolean KeypadClass::isAsterisk() {
+	return (_data == '*');
 }
