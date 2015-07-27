@@ -37,7 +37,7 @@ void LockDeviceClass::limSwInit() {
 * @param lockerNum [1;4]
 */
 boolean LockDeviceClass::isLimSwOn(int lockerNum) {
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	static uint32_t startTime = 0;
 	static bool flag = false;
 	if (digitalRead(_limSwPtr[lockerNum - 1]) == 0) {

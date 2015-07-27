@@ -132,7 +132,7 @@ int LockerClass::updateLocker() {
 	switch (getCurrentState()) {
 	case IDLE_STATE:
 		if (_myKeypad->isBufferFull() != false) {
-			if (_myKeypad->get4DigitNum() == _ADMIN_PASSWORD_) {
+			if (_myKeypad->get4DigitNum() == ADMIN_PASSWORD) {
 				setCurrentState(ADMIN_STATE);
 			}
 			_myKeypad->clearBuffer();

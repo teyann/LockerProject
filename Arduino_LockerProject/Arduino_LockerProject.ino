@@ -21,17 +21,15 @@
 LiquidCrystal_I2C		i2cLcd(0x27, 16, 2);
 // 4개의 락커를 지니도록 설정 / set to has 4 Locker
 LockerClass				Locker(LOCKER_SIZE);
-KeypadClass				Key;
-#ifndef SEIRLA_IO
-LcdClass				LCD(&i2cLcd);
-#endif
-#ifdef SEIRLA_IO
-LcdClass				LCD;
-#endif
-
 // 각각 배열에 있는 값들을 가지는 잠금 장치를 설정 / set lockdevice by each pin for array 
 LockDeviceClass			Lock(LOCK_PIN, LIMIT_SWITCH_PIN);
+KeypadClass				Key;
 
+#if(defined SERIAL_IO)
+LcdClass				LCD;
+#else
+LcdClass				LCD(&i2cLcd);
+#endif
 
 void setup() {
 	Serial.begin(SERIAL_BAUDRATE);

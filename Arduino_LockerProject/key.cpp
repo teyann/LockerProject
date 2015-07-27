@@ -12,7 +12,7 @@ KeypadClass::KeypadClass() {
 }
 
 void KeypadClass::updateKeypad() {
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	// key matrix�� ����� ���� ������ �о��
 	uint16_t keyADC = analogRead(KEY_PIN);
 
@@ -49,7 +49,7 @@ void KeypadClass::updateKeypad() {
 		_bufIndex = _bufIndex % 4;
 	}
 
-#if(!defined SEIRLA_IO && defined SERIAL_DEBUG)
+#if(!defined SERIAL_IO && defined SERIAL_DEBUG)
 	Serial.println(keyADC + "/" + _data);
 #endif
 #ifdef SERIAL_DEBUG

@@ -45,7 +45,7 @@ void LcdClass::initalLcd() {
 	/* Locker System!
 	 * 1. Keep 2. Find
 	 */
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	_myLcd->clear();
 	_myLcd->print(lcdMsg[INITAL_LCD]);
 	_myLcd->setCursor(0, 1);
@@ -60,7 +60,7 @@ void LcdClass::selectLcd() {
 	/* Find Locker Number / Keep Locker Number
 	 * 1:O 2:X 3:X 4:O
 	 */
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	_myLcd->clear();
 	if (_myLocker->getSelectMode() == KEEP_MODE)
 		_myLcd->print(lcdKeyword[0]);
@@ -120,7 +120,7 @@ void LcdClass::passwordLcd() {
 	/* Password
 	 * **__
 	 */
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	_myLcd->clear();
 	_myLcd->print(lcdMsg[PASSWORD_LCD]);
 	_myLcd->setCursor(0, 1);
@@ -155,7 +155,7 @@ void LcdClass::openLcd() {
 	/* Locker Opened
 	 * # Button
 	 */
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	_myLcd->clear();
 	_myLcd->print(lcdMsg[OPEN_LCD]);
 	_myLcd->setCursor(0, 1);
@@ -170,7 +170,7 @@ void LcdClass::closeLcd() {
 	/* Locker Closed
 	 * Thank You
 	 */
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	_myLcd->clear();
 	_myLcd->print(lcdMsg[CLOSE_LCD]);
 	_myLcd->setCursor(0, 1);
@@ -185,7 +185,7 @@ void LcdClass::adminLcd() {
 	/* 1: 0000 2: ____
 	 * 3: ____ 4: 1234
 	 */
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	_myLcd->clear();
 #else
 	Serial.println("-test-");
@@ -197,7 +197,7 @@ void LcdClass::errorLcd(int errCnt) {
 	/* Error
 	 * Out Range / Don't Use / Password
 	 */
-#if(!defined SEIRLA_IO)
+#if(!defined SERIAL_IO)
 	_myLcd->clear();
 	_myLcd->print(lcdMsg[ERROR_LCD]);
 	_myLcd->setCursor(0, 1);

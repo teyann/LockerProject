@@ -6,7 +6,7 @@
 ////////////////////
 
 // 입출력을 시리얼로 함(시리얼 테스트 모드), 비활성화되면 I2C LCD로 출력
-#define SEIRLA_IO 
+#define SERIAL_IO 
 // 시리얼로 여러 값들을 자세희 살펴보는 모드
 //#define SERIAL_DEBUG 
 
@@ -21,7 +21,7 @@
 // 시리얼에선 바꿀수 있지만, LCD에서는 4개가 최대
 #define LOCKER_SIZE 4
 // 아이들상태에서 관리자 모드로 접근하기 위한 4자리 비밀번호
-#define _ADMIN_PASSWORD_ 9999 
+#define ADMIN_PASSWORD 9999 
 
 
 //////////////////////////////
