@@ -2,14 +2,22 @@
 
 locker::locker(int maxNum)
 : _lockerMaxNum(maxNum) {
+	_info = new lockerInfo_t[_lockerMaxNum];
 	_lockerNum = -1;
 }
 
-void locker::begin() {
+locker::~locker() {
+	delete[] _info;
+	_info = NULL;
+}
+
+void locker::begin(key* myKey, lockDevice* myLock) {
 	for (int i = 0; i < _lockerMaxNum; i++) {
 		_info[i].hasItem = false;
-		_info[i].password = 0;
+//		_info[i].password = 0; // INFO0
 	}
+	_myKey = myKey;
+	_myLock = myLock;
 }
 
 // ���� ����
@@ -17,7 +25,7 @@ state_t locker::currentState() {
 	return _state;
 }
 
-// ���� ������Ʈ
+// state_t
 void locker::updateState(state_t newState) {
 	_state = newState;
 	if (newState == CLOSE_STATE)
@@ -27,28 +35,29 @@ void locker::updateState(state_t newState) {
 
 }
 
-// ���õ� ���
 mode_t locker::selectedMode(){
 	return _mode;
 }
-// ��� ����
+// [mode_t]
 void locker::selectMode(mode_t newMode) {
 	_mode = newMode;
 }
 
+// [1;4]
 boolean locker::hasItem(int lockerNum) {
 	lockerNum--;
-	if (!(lockerNum >= 0 && lockerNum < _lockerMaxNum))
+	if (!(lockerNum >= 0 && lockerNum <= _lockerMaxNum))
 		return false;
 	return _info[lockerNum].hasItem;
 }
+// [1;4]
 int locker::password(int lockerNum) {
 	lockerNum--;
 	if (!(lockerNum >= 0 && lockerNum < _lockerMaxNum))
 		return false;
 	return _info[lockerNum].password;
 }
-
+// [1;4],[0;9999]
 int locker::findItem(int lockerNum, int pw) {
 	lockerNum--;
 	if (!(lockerNum >= 0 && lockerNum < _lockerMaxNum))
@@ -63,9 +72,10 @@ int locker::findItem(int lockerNum, int pw) {
 	if (password(lockerNum) != pw)
 		return 3;
 	_info[lockerNum].hasItem = false;
-	_info[lockerNum].password = 0;
+	_info[lockerNum].password = 0; // INFO0
 	return 0;
 }
+// [1;4], [0;9999]
 int locker::keepItem(int lockerNum, int pw) {
 	lockerNum--;
 	if (!(lockerNum >= 0 && lockerNum < _lockerMaxNum))
@@ -81,6 +91,7 @@ int locker::keepItem(int lockerNum, int pw) {
 	return 0;
 }
 
+// ['1','2']
 mode_t locker::a2Mode(char c) {
 	if (c == '1')
 		return KEEP_MODE;
@@ -88,8 +99,8 @@ mode_t locker::a2Mode(char c) {
 		return FIND_MODE;
 }
 
-int locker::updateLocker(key* myKey, lockDevice* myLock) {
-	char key = myKey->readKey();
+int locker::updateLocker() {
+	char key = _myKey->readKey();
 
 	if (key != NO_CHAR) {
 		Serial.print("In Char = ");
@@ -98,7 +109,7 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 	}
 
 	// OPEN���°� �ƴҶ� '*'�� �ԷµǸ� �ʱ���·� ���ư�
-	if (myKey->isAsterisk() != false) { 
+	if (_myKey->isAsterisk() != false) { 
 		if (currentState() != OPEN_STATE)
 			updateState(IDLE_STATE);
 	}
@@ -106,10 +117,10 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 	switch (currentState()) {
 	case IDLE_STATE:
       		// ���۰� �������� ������ ��ȣ�� ��ġ�ϴ��� Ȯ��
-		if (myKey->isBufferFull() != false) {
-			if (myKey->read4Num() == _ADMIN_PASSWORD_)
+		if (_myKey->isBufferFull() != false) {
+			if (_myKey->read4Num() == _ADMIN_PASSWORD_)
 				updateState(ADMIN_STATE);
-			myKey->clearBuffer();
+			_myKey->clearBuffer();
 		}
 		// �Էµ� ���� '1','2'�϶� ��带 ����
 		if (key == '1' || key == '2') {
@@ -118,9 +129,9 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 		}
 		break;
 	case SELECT_STATE:
-		if (myKey->isNumber() != false) { // �����϶���
-			_lockerNum = key - 48;
-			if (!(_lockerNum >= 0 && _lockerNum < _lockerMaxNum)) {
+		if (_myKey->isNumber() != false) { // �����϶���
+			_lockerNum = (key - 48)%10; // [0;9] 나머진 에러로 처리해도 됨
+			if (!(_lockerNum > 0 && _lockerNum <= _lockerMaxNum)) { // [1;4]
 				return 1;
 			}
 			// ã�� ����϶� �����Ǿ� ������ ���ÿϷ�
@@ -130,7 +141,7 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 					return 2;
 				}
 				else {
-                    myKey->clearBuffer();
+                    _myKey->clearBuffer();
 					updateState(PASSWORD_STATE);
 				}
 			}
@@ -141,7 +152,7 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 					return 2;
 				}
 				else {
-                    myKey->clearBuffer();
+                    _myKey->clearBuffer();
 					updateState(PASSWORD_STATE);
 				}
 			}
@@ -150,10 +161,11 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 
 	case PASSWORD_STATE:
 			// �������� ���õǾ�����, ���۰� �������� �о ��й�ȣ ��
-			if (myKey->isBufferFull() != false) {
-				int pw = myKey->read4Num(); // ��й�ȣ �б�
+			if (_myKey->isBufferFull() != false) {
+				int pw = _myKey->read4Num(); // ��й�ȣ �б�
 				if (selectedMode() == KEEP_MODE) {
 					int temp = keepItem(_lockerNum, pw);
+					findItem(_lockerNum, pw);
 					switch (temp) {
 					case 0:
 						updateState(OPEN_STATE);
@@ -188,14 +200,14 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 						break;
 					}
 				}
-				myKey->clearBuffer();
+				_myKey->clearBuffer();
 			}
 		  break;
 	case OPEN_STATE:
 		// ������ ���� ���
-		myLock->lockOff(_lockerNum);
+		_myLock->lockOff(_lockerNum);
 		// �������·� ��ư�� ������
-		if (myLock->isLimSwOn(_lockerNum) != false) {
+		if (_myLock->isLimSwOn(_lockerNum) != false) {
 			if (key == '#') {
 				updateState(CLOSE_STATE);
 			}
@@ -204,7 +216,7 @@ int locker::updateLocker(key* myKey, lockDevice* myLock) {
 		break;
 	case CLOSE_STATE:
 		// ������ ���� ���
-		myLock->lockOn(_lockerNum);
+		_myLock->lockOn(_lockerNum);
 //		// ���� �ð��� ���ư�
 		if ((millis() - closeStartTime) >= 3000) {
 			_lockerNum = -1;

@@ -1,5 +1,5 @@
-#ifndef _KEY_H_
-#define _KEY_H_
+#ifndef KEY_H
+#define KEY_H
 
 #include <Arduino.h>
 

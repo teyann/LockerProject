@@ -1,5 +1,30 @@
 #include "lcd.h"
 
+String lcd::lcdMsg[] = {
+	"Locker System!",
+	"1. Keep 2. Find",
+
+	"Locker Number",
+
+	"Password",
+
+	"Locker Opened",
+	"# Button",
+
+	"Locker Closed",
+	"Thank You",
+
+	"Error",
+};
+
+String lcd::lcdKeyword[] = {
+	"Keep ",
+	"Find ",
+	"Out Range", // Err 1
+	"Don't Use", // Err 2
+	"Password" // Err 3
+};
+
 lcd::lcd() {
 }
 
@@ -7,6 +32,12 @@ lcd::lcd(LiquidCrystal_I2C* liquidCrystalPtr) {
 	_lcd = liquidCrystalPtr;
 	_lcd->init();
 	_lcd->backlight();
+}
+
+void lcd::begin(locker* myLocker, key* myKey) {
+	_myLocker = myLocker;
+	_myKey = myKey;
+	writeLcd();
 }
 
 void lcd::initalLcd() {
@@ -21,16 +52,16 @@ void lcd::initalLcd() {
 #endif
 	Serial.println(lcdMsg[INITAL_LCD]);
 	Serial.println(lcdMsg[INITAL_LCD + 1]);
-	Serial.print("_");
+//	Serial.print("_");
 	Serial.println();
 }
-void lcd::selectLcd(locker* locker) {
+void lcd::selectLcd() {
 	/* Find Locker Number / Keep Locker Number
 	 * 1:O 2:X 3:X 4:O
 	 */
 #ifndef _SEIRLA_IO_
 	_lcd->clear();
-	if (locker->selectedMode() == FIND_MODE)
+	if (_myLocker->selectedMode() == FIND_MODE)
 		_lcd->print(lcdKeyword[0]);
 	else 
 		_lcd->print(lcdKeyword[1]);
@@ -41,14 +72,14 @@ void lcd::selectLcd(locker* locker) {
 	for (int i = 0; i < 4; i++) {
 		_lcd->print(i+1);
 		_lcd->print(":");
-		if (locker->selectedMode() == FIND_MODE) {
-			if (locker->hasItem(i) != true) 
+		if (_myLocker->selectedMode() == FIND_MODE) {
+			if (_myLocker->hasItem(i) != true) 
 				_lcd->print("X");
 			else 
 				_lcd->print("O");
 		}
 		else {
-			if (locker->hasItem(i) != false)
+			if (_myLocker->hasItem(i) != false)
 				_lcd->print("X");
 			else
 				_lcd->print("O");
@@ -56,7 +87,7 @@ void lcd::selectLcd(locker* locker) {
 		_lcd->print(" ");
 	}
 #endif
-	if (locker->selectedMode() == KEEP_MODE)
+	if (_myLocker->selectedMode() == KEEP_MODE)
 		Serial.print(lcdKeyword[0]);
 	else
 		Serial.print(lcdKeyword[1]);
@@ -66,14 +97,14 @@ void lcd::selectLcd(locker* locker) {
 	for (int i = 1; i <= 4; i++) {
 		Serial.print(i);
 		Serial.print(":");
-		if (locker->selectedMode() == KEEP_MODE) {
-			if (locker->hasItem(i) != false)
+		if (_myLocker->selectedMode() == KEEP_MODE) {
+			if (_myLocker->hasItem(i) != false)
 				Serial.print("X");
 			else
 				Serial.print("O");
 		}
 		else {
-			if (locker->hasItem(i) != true)
+			if (_myLocker->hasItem(i) != true)
 				Serial.print("X");
 			else
 				Serial.print("O");
@@ -83,7 +114,7 @@ void lcd::selectLcd(locker* locker) {
 	Serial.println();
 	Serial.println();
 }
-void lcd::passwordLcd(key* key) {
+void lcd::passwordLcd() {
 	/* Password
 	 * **__
 	 */
@@ -93,8 +124,8 @@ void lcd::passwordLcd(key* key) {
 	_lcd->setCursor(0, 1);
 
 	static int preBufCnt = 0;
-	int bufCnt = key->bufferCount();
-	if (key->isBufferFull() != false) {
+	int bufCnt = _myKey->bufferCount();
+	if (_myKey->isBufferFull() != false) {
 		bufCnt = 4;
 	}
 	for (int i = 0; i < 4; i++) {
@@ -106,8 +137,8 @@ void lcd::passwordLcd(key* key) {
 	preBufCnt = bufCnt;
 #endif
 	Serial.println(lcdMsg[PASSWORD_LCD]);
-	int bufCnt = key->bufferCount();
-	if (key->isBufferFull() != false) {
+	int bufCnt = _myKey->bufferCount();
+	if (_myKey->isBufferFull() != false) {
 		bufCnt = 4;
 	}
 	for (int i = 0; i < 4; i++) {
@@ -162,12 +193,12 @@ void lcd::errorLcd(int errCnt) {
 	Serial.println();
 }
 
-void lcd::writeLcd(locker* locker, key* key) {
-	state_t currentState = locker->currentState();
+void lcd::writeLcd() {
+	state_t currentState = _myLocker->currentState();
 	static state_t preState = CLOSE_STATE;
 
 	static int preBufCnt = 0;
-	int bufCnt = key->bufferCount();
+	int bufCnt = _myKey->bufferCount();
 
 	if ((bufCnt != preBufCnt && currentState == PASSWORD_STATE) ||
 		currentState != preState) {
@@ -177,10 +208,10 @@ void lcd::writeLcd(locker* locker, key* key) {
 			initalLcd();
 			break;
 		case SELECT_STATE:
-			selectLcd(locker);
+			selectLcd();
 			break;
 		case PASSWORD_STATE:
-			passwordLcd(key);
+			passwordLcd();
 			break;
 		case OPEN_STATE:
 			openLcd();

@@ -50,4 +50,5 @@ boolean lockDevice::isLimSwOn(int boxNum) {
 
 int lockDevice::limSwOnTime(int boxNum) {
 	// INT
+	return 0;
 }

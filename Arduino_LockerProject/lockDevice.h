@@ -1,5 +1,5 @@
-#ifndef _LOCKDEVICE_H_
-#define _LOCKDEVICE_H_
+#ifndef LOCKDEVICE_H
+#define LOCKDEVICE_H
 
 #include <Arduino.h>
 #include "key.h"

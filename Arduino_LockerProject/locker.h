@@ -1,5 +1,5 @@
-#ifndef _BOX_H_
-#define _BOX_H_
+#ifndef LOCKER_H
+#define LOCKER_H
 
 #include <Arduino.h>
 #include "key.h"
@@ -27,23 +27,24 @@ class locker
 public:
 	// ������
 	locker(int maxNum);
-	void begin();
-	int updateLocker(key* myKey, lockDevice* myLock);
+	~locker();
+	void begin(key* myKey, lockDevice* myLock);
+	int updateLocker();
 	// ���� ����
 	state_t currentState();
 	// ���õ� ���
 	mode_t selectedMode();
 	boolean hasItem(int lockerNum);
+
 private:
 	struct lockerInfo_t{
-		int password;
+		uint16_t password;
 		boolean hasItem;
 	};
-
+	
 	// ���� ������Ʈ
 	void updateState(state_t newState);
 
-	
 	// ��� ����
 	void selectMode(mode_t newMode);
 
@@ -59,10 +60,12 @@ private:
 	// ��� �ٲ�
 	state_t _state;
 	// �ʹݿ� �ԷµǴ� ���� ���� �ٲ�
-	lockerInfo_t *_info = new lockerInfo_t[_lockerMaxNum];
+	lockerInfo_t *_info;
 	mode_t _mode;
 
 	int _lockerNum;
+	key* _myKey;
+	lockDevice* _myLock;
 
 	// �ð�����
 	uint32_t closeStartTime;

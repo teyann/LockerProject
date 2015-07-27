@@ -1,3 +1,9 @@
+/*	kor/한글테스트
+	eng/Korean Test
+	kor/lcd 출력으로 변경하려면, 시리얼로 출력되어 있는걸 바탕으로 소스 변경이 필요함
+	eng/if you change serial output to lcd output, you must to change lcd code based on serial source code.
+*/
+
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "locker.h"
@@ -24,21 +30,21 @@ lcd					LCD;
 lockDevice			Lock(LOCK_PIN, LIMIT_SWITCH_PIN);
 
 void setup() {
-	Serial.begin(9600);
-	LCD.writeLcd(&Locker, &Key);
-	Locker.begin();
+	Serial.begin(115200);
+	LCD.begin(&Locker, &Key);
+	Locker.begin(&Key, &Lock);
 }
 
 void loop() {
-	// Ű��Ʈ ������ �б�
+	// 
 	Key.updateKey();
 	// ��� ������Ʈ
-	int errCode = Locker.updateLocker(&Key, &Lock);
+	int errCode = Locker.updateLocker();
 	if (errCode != 0) {
 		LCD.writeErrLcd(errCode);
 	}
 	else {
 		// LCD ���
-		LCD.writeLcd(&Locker, &Key);
+		LCD.writeLcd();
 	}
 }

@@ -1,7 +1,7 @@
 #include "key.h"
 
 key::key() {
-	_keyChar = '/0';
+	_keyChar = '\0';
 	_num4Index = 0;
 	bufFull = false;
 }
