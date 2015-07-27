@@ -35,5 +35,5 @@
 
 관리자 모드 진입번호는 원하는 4자리 숫자로 변경이 가능합니다 :
 ```
-#define _ADMIN_PASSWORD_ 9999 
+#define ADMIN_PASSWORD 9999 
 ```
