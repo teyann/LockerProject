@@ -4,7 +4,7 @@
 
 #### Developed by Redifei
 
-The code is released under the ''
+The code is released under the 'GNU GENERAL PUBLIC LICENSE'
 
 -----------------------------
 
