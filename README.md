@@ -1,8 +1,12 @@
 ### Locker Project by ARDUINO
 
+It is currently not maintained.
+
+This project was a small project of Daegu Arduino Study.
+
 -----------------------------
 
-#### Developed by Redifei
+#### Developed by TEYANN
 
 The code is released under the 'GNU GENERAL PUBLIC LICENSE'
 
@@ -10,9 +14,3 @@ The code is released under the 'GNU GENERAL PUBLIC LICENSE'
 
 ### Schematic
 ![Schematic](./Arduino_LockerProject/image/Arduino_Locker-Schematic_view.png)
-
------------------------------
-
-contact Redifei (begoreGTS@gmail.com, ysun34@naver.com)
-
-Daegu, Korea
